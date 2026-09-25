@@ -46,3 +46,8 @@ next-env.d.ts
 # prisma local db artifacts
 prisma/*.db
 prisma/*.db-journal
+
+# agent tooling artifacts (regenerated locally by next dev, not part of the project)
+CLAUDE.md
+AGENTS.md
+.claude/
