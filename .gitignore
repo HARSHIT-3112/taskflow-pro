@@ -1,53 +1,41 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
+# --- Secrets -----------------------------------------------------------------
+# Never commit real credentials. .env.example is the committed template.
+.env
+.env.*
+!.env.example
 *.pem
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
+# --- Python ------------------------------------------------------------------
+# Virtual environments are a prohibited submission item: never commit them.
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
 
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
+# --- Node / frontend ---------------------------------------------------------
+node_modules/
+dist/
+build/
+.vite/
 *.tsbuildinfo
-next-env.d.ts
 
-# allow the example env template (no secrets)
-!.env.example
+# --- Editors and OS ----------------------------------------------------------
+.DS_Store
+.idea/
+.vscode/
 
-# prisma local db artifacts
-prisma/*.db
-prisma/*.db-journal
+# --- Logs --------------------------------------------------------------------
+*.log
+npm-debug.log*
 
-# agent tooling artifacts (regenerated locally by next dev, not part of the project)
+# --- Agent tooling artifacts (not part of the project) -----------------------
 CLAUDE.md
 AGENTS.md
 .claude/

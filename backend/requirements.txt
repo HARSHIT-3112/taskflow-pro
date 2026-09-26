@@ -1,0 +1,13 @@
+# Web framework and server
+fastapi==0.141.1
+uvicorn[standard]==0.54.0
+
+# Database: SQLModel wraps SQLAlchemy + Pydantic; psycopg is the Postgres driver
+sqlmodel==0.0.47
+psycopg[binary]==3.3.6
+
+# Reads settings from the .env file into a typed Settings object
+pydantic-settings==2.15.0
+
+# LLM client for the dependency-suggestion feature
+anthropic==1.8.0
