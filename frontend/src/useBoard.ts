@@ -138,8 +138,10 @@ export function useBoard() {
     [mutate],
   );
 
+  // `version` is supplied here from the task we already hold, so callers pass
+  // only the fields they want to change.
   const updateTask = useCallback(
-    (task: Task, changes: Parameters<typeof api.updateTask>[1]) =>
+    (task: Task, changes: Omit<Parameters<typeof api.updateTask>[1], "version">) =>
       mutate(null, () => api.updateTask(task.id, { ...changes, version: task.version })),
     [mutate],
   );

@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import dependencies as dependencies_routes
+from app.api import suggestions as suggestions_routes
 from app.api import tasks as tasks_routes
 from app.config import settings
 from app.db import create_db_and_tables
@@ -49,6 +50,7 @@ app.add_middleware(
 
 app.include_router(tasks_routes.router)
 app.include_router(dependencies_routes.router)
+app.include_router(suggestions_routes.router)
 
 
 @app.get("/api/health", tags=["meta"])

@@ -77,3 +77,22 @@ export const COLUMNS: { id: TaskStatus; label: string }[] = [
   { id: "REVIEW", label: "Review" },
   { id: "DONE", label: "Done" },
 ];
+
+/** An LLM-proposed edge awaiting human review. Not part of the graph yet. */
+export interface Suggestion {
+  id: string;
+  upstream_id: string;
+  downstream_id: string;
+  /** Model's self-reported confidence, 0..1. Shown, never used to auto-accept. */
+  confidence: number;
+  /** Must quote evidence from the task text. */
+  rationale: string;
+  status: "PENDING" | "ACCEPTED" | "REJECTED";
+}
+
+export interface SuggestionList {
+  ai_enabled: boolean;
+  suggestions: Suggestion[];
+  /** Distinguishes "the call failed" from "the model found nothing". */
+  error: string | null;
+}

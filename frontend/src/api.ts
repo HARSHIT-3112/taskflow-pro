@@ -4,7 +4,7 @@
  * never touch fetch directly.
  */
 
-import type { Board, MutationResult, TaskStatus } from "./types";
+import type { Board, MutationResult, SuggestionList, TaskStatus } from "./types";
 
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -120,3 +120,17 @@ export const addDependency = (input: {
 
 export const removeDependency = (id: string) =>
   request<MutationResult>(`/api/dependencies/${id}`, { method: "DELETE" });
+
+// --- AI suggestions ---------------------------------------------------------
+
+export const getSuggestions = () => request<SuggestionList>("/api/suggestions");
+
+export const generateSuggestions = () =>
+  request<SuggestionList>("/api/suggestions/generate", { method: "POST" });
+
+/** Accepting routes through the same validated endpoint a manual edge uses. */
+export const acceptSuggestion = (id: string) =>
+  request<MutationResult>(`/api/suggestions/${id}/accept`, { method: "POST" });
+
+export const rejectSuggestion = (id: string) =>
+  request<SuggestionList>(`/api/suggestions/${id}/reject`, { method: "POST" });

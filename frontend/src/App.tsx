@@ -9,6 +9,7 @@ import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import type { DragEndEvent } from "@dnd-kit/core";
 import { useMemo, useState } from "react";
 import { Column } from "./components/Column";
+import { SuggestionPanel } from "./components/SuggestionPanel";
 import { TaskDetail } from "./components/TaskDetail";
 import { COLUMNS } from "./types";
 import type { Task, TaskStatus } from "./types";
@@ -129,6 +130,7 @@ export default function App() {
               + New task
             </button>
           )}
+          <SuggestionPanel tasks={board.tasks} onAccepted={() => void board.reload()} />
           <button className="button" onClick={() => void board.reload()} type="button">
             Refresh
           </button>
