@@ -147,7 +147,19 @@ nothing to un-flip, because nothing was ever latched.
 This is the clearest example of the project's general principle: *derive
 everything you can; store only what you cannot compute.*
 
-### 3.4 Persistence
+### 3.4 Seeing the graph
+
+The board shows prerequisites as text, which makes a diamond something the
+reader has to reconstruct mentally. The **Dependency graph** view draws it:
+nodes are placed in columns by **topological depth** — the same ordering the
+engine schedules with — so every arrow points strictly left to right.
+
+That is not a drawing convention. A backwards arrow would mean a cycle, and the
+engine does not permit one, so the acyclicity guarantee is visible in the
+layout itself. Node colour shows derived state (ready / blocked / done) and the
+critical path is highlighted along both nodes and edges.
+
+### 3.5 Persistence
 
 All state lives in PostgreSQL. A browser refresh re-runs `GET /api/board` and
 the plan returns exactly as it was — including board position, which is stored

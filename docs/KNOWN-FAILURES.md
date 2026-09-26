@@ -95,7 +95,6 @@ truncation or ellipsis. Cosmetic only.
 | **No working-day calendar** | Calendar days by default; weekends and holidays are scheduled like any other day | A flag exists in the assumptions; the engine would skip non-working days when computing `end` |
 | **Frontend types hand-mirrored** | `frontend/src/types.ts` duplicates the Pydantic schemas by hand, so they can silently drift | Generate a client from the OpenAPI schema at `/openapi.json` |
 | **Whole-board recompute** | Exact and simple at this scale; the engine is O(V+E) and a hundred tasks recompute in single-digit ms | Recompute only the transitive closure of the changed node |
-| **No dependency graph visualisation** | The board shows prerequisites as text; there is no node-and-edge diagram | A graph view would make deep chains far easier to read |
 
 ---
 
@@ -145,5 +144,6 @@ the purity constraint.
 2. **API integration test suite** — the engine is well covered; the routes are not
 3. **Generated frontend client** from the OpenAPI schema
 4. **Websocket push** so multiple browsers stay in sync
-5. **Dependency graph view** — the DAG deserves to be seen, not just listed
-6. **Alembic migrations**
+5. **Alembic migrations**
+6. **Interactive graph editing** — the graph view is read-only; dragging an
+   edge between nodes would be a natural way to create a dependency

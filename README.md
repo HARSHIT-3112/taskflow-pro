@@ -48,6 +48,7 @@ setup. Two diamonds, a six-level chain, and a task already Done with dependents.
 | 2 | **No cycles** — open *Design database schema*, add prerequisite *Production release* | Refused, with the full circular path named in task titles. The board is unchanged |
 | 3 | **Rollback** — drag *Design database schema* from Done to In Progress | *Build REST API endpoints* and *Build authentication service* turn **Blocked**, showing what they are waiting on |
 | 4 | **Persistence** — refresh the browser | Everything stays exactly as you left it |
+| 5 | **See the graph** — click *Dependency graph* | The DAG drawn by topological depth: the diamond, the six-level chain, and the critical path highlighted. Click any node to open it |
 
 Run `make seed` at any time to reset the board.
 

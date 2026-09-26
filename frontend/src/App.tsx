@@ -9,6 +9,7 @@ import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import type { DragEndEvent } from "@dnd-kit/core";
 import { useMemo, useState } from "react";
 import { Column } from "./components/Column";
+import { DependencyGraph } from "./components/DependencyGraph";
 import { SuggestionPanel } from "./components/SuggestionPanel";
 import { TaskDetail } from "./components/TaskDetail";
 import { COLUMNS } from "./types";
@@ -18,6 +19,7 @@ import { useBoard } from "./useBoard";
 export default function App() {
   const board = useBoard();
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
+  const [showGraph, setShowGraph] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
 
@@ -130,6 +132,13 @@ export default function App() {
               + New task
             </button>
           )}
+          <button
+            className={`button ${showGraph ? "button--primary" : ""}`}
+            onClick={() => setShowGraph((v) => !v)}
+            type="button"
+          >
+            {showGraph ? "Hide graph" : "Dependency graph"}
+          </button>
           <SuggestionPanel tasks={board.tasks} onAccepted={() => void board.reload()} />
           <button className="button" onClick={() => void board.reload()} type="button">
             Refresh
@@ -154,6 +163,17 @@ export default function App() {
             ×
           </button>
         </div>
+      )}
+
+      {!board.loading && showGraph && (
+        <DependencyGraph
+          tasks={board.tasks}
+          dependencies={board.dependencies}
+          criticalPath={board.criticalPath}
+          selectedId={openTaskId}
+          onSelect={setOpenTaskId}
+          onClose={() => setShowGraph(false)}
+        />
       )}
 
       {board.loading ? (

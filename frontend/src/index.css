@@ -251,3 +251,44 @@ input:focus, textarea:focus, select:focus {
 .suggest__why { margin: 7px 0 0; font-size: 12px; color: #44506080; color: #445060; line-height: 1.5; font-style: italic; }
 .suggest__actions { display: flex; align-items: center; gap: 7px; margin-top: 10px; }
 .suggest__confidence { flex: 1; font-size: 11px; color: var(--muted); }
+
+/* ---------- dependency graph ---------- */
+
+.graph {
+  margin: 14px 24px 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.graph__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 13px 16px 0; }
+.graph__title { margin: 0; font-size: 14px; }
+.graph__note { margin: 3px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.45; max-width: 56ch; }
+
+.graph__legend { display: flex; gap: 15px; flex-wrap: wrap; padding: 9px 16px 11px; font-size: 11.5px; color: var(--muted); }
+.graph__legend span { display: inline-flex; align-items: center; gap: 5px; }
+.dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+.dot--ready { background: var(--ready); }
+.dot--blocked { background: var(--blocked); }
+.dot--done { background: #9aa4ae; }
+.dot--critical { background: var(--critical); }
+
+.graph__scroll { overflow: auto; max-height: 46vh; padding: 0 16px 16px; }
+.graph__svg { display: block; }
+
+.edge { fill: none; stroke: #c4ccd4; stroke-width: 1.5; }
+.edge--critical { stroke: var(--critical); stroke-width: 2.2; }
+
+.node { cursor: pointer; }
+.node__box { fill: var(--surface); stroke: var(--border); stroke-width: 1.5; transition: stroke 120ms, fill 120ms; }
+.node__title { font-size: 11.5px; font-weight: 600; fill: var(--text); }
+.node__meta { font-size: 10px; fill: var(--muted); }
+
+.node--ready .node__box { stroke: var(--ready); fill: var(--ready-bg); }
+.node--blocked .node__box { stroke: var(--blocked); fill: var(--blocked-bg); }
+.node--done .node__box { fill: #f1f3f5; stroke: #c4ccd4; }
+.node--done .node__title { fill: var(--muted); }
+.node--critical .node__box { stroke: var(--critical); stroke-width: 2.4; }
+.node--selected .node__box { stroke: var(--accent); stroke-width: 2.8; }
+.node:hover .node__box { filter: brightness(0.97); }
