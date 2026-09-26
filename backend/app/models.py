@@ -7,7 +7,7 @@ Only the engine (app/engine) may write `start_date`, `end_date` and
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from uuid import uuid4
 
 from sqlalchemy import UniqueConstraint
@@ -30,7 +30,7 @@ def _new_id() -> str:
 
 def _utcnow() -> datetime:
     """Timezone-aware creation timestamp, so ordering is unambiguous."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Task(SQLModel, table=True):

@@ -8,12 +8,12 @@ framework import.
 
 from __future__ import annotations
 
-import enum
 from dataclasses import dataclass
 from datetime import date, timedelta
+from enum import StrEnum
 
 
-class TaskStatus(str, enum.Enum):
+class TaskStatus(StrEnum):
     """The four Kanban columns.
 
     Workflow stage only. This says nothing about whether a task is blocked -
@@ -27,19 +27,19 @@ class TaskStatus(str, enum.Enum):
     DONE = "DONE"
 
 
-class DependencyState(str, enum.Enum):
+class DependencyState(StrEnum):
     """Derived from the graph on every recompute. Never set by hand."""
 
     READY = "READY"
     BLOCKED = "BLOCKED"
 
 
-class DependencyOrigin(str, enum.Enum):
+class DependencyOrigin(StrEnum):
     HUMAN = "HUMAN"
     AI_ACCEPTED = "AI_ACCEPTED"
 
 
-class SuggestionStatus(str, enum.Enum):
+class SuggestionStatus(StrEnum):
     PENDING = "PENDING"
     ACCEPTED = "ACCEPTED"
     REJECTED = "REJECTED"

@@ -1,0 +1,26 @@
+# Linter and formatter configuration.
+# Run with:  ruff check app tests     /     ruff format app tests
+
+line-length = 100
+target-version = "py312"
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # import sorting
+    "B",   # bugbear: likely bugs
+    "UP",  # pyupgrade: modern syntax
+    "SIM", # simplify
+]
+
+[lint.flake8-bugbear]
+# `Depends(...)` and `Query(...)` in argument defaults is the documented FastAPI
+# dependency-injection idiom, not the mutable-default bug B008 warns about.
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Body",
+    "fastapi.Header",
+]
