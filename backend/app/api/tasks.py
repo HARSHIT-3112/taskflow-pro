@@ -62,13 +62,23 @@ def _check_version(task: Task, expected: int) -> None:
         )
 
 
-def _result(session: Session) -> MutationResult:
-    """Recompute, commit, and describe everything that moved."""
+def _result(session: Session, touched: Task | None = None) -> MutationResult:
+    """Recompute, commit, and describe everything that moved.
+
+    `touched` is the task the caller explicitly edited. It is always included in
+    the response even when the engine did not move its dates - because its
+    `version` was still incremented, and a client that never learns the new
+    version would be refused with a stale-version 409 on its next edit.
+    """
     changed, path, over_constrained = recompute_board(session)
     session.commit()
 
     for task in changed:
         session.refresh(task)
+
+    if touched is not None and all(t.id != touched.id for t in changed):
+        session.refresh(touched)
+        changed = [touched, *changed]
 
     dependencies = list(session.exec(select(Dependency)).all())
     return MutationResult(
@@ -125,7 +135,7 @@ def create_task(
     session.add(task)
     session.flush()  # assign the id without committing yet
 
-    return _result(session)
+    return _result(session, touched=task)
 
 
 @router.patch("/tasks/{task_id}", response_model=MutationResult)
@@ -145,7 +155,7 @@ def update_task(
     task.version += 1
     session.add(task)
 
-    return _result(session)
+    return _result(session, touched=task)
 
 
 @router.patch("/tasks/{task_id}/move", response_model=MutationResult)
@@ -169,7 +179,7 @@ def move_task(
     task.version += 1
     session.add(task)
 
-    return _result(session)
+    return _result(session, touched=task)
 
 
 @router.delete("/tasks/{task_id}", response_model=MutationResult)
