@@ -7,12 +7,20 @@ Only the engine (app/engine) may write `start_date`, `end_date` and
 
 from __future__ import annotations
 
-import enum
 from datetime import date, datetime, timezone
 from uuid import uuid4
 
 from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, SQLModel
+
+# Enums live in app/domain.py so the engine can use them without importing
+# anything database-related. This module is the only place that knows about SQL.
+from app.domain import (
+    DependencyOrigin,
+    DependencyState,
+    SuggestionStatus,
+    TaskStatus,
+)
 
 
 def _new_id() -> str:
@@ -23,48 +31,6 @@ def _new_id() -> str:
 def _utcnow() -> datetime:
     """Timezone-aware creation timestamp, so ordering is unambiguous."""
     return datetime.now(timezone.utc)
-
-
-class TaskStatus(str, enum.Enum):
-    """The four Kanban columns.
-
-    This is workflow stage only. It says nothing about whether a task is
-    blocked - that is DependencyState, which is computed from the graph.
-    A BACKLOG task can be READY and an IN_PROGRESS task can be BLOCKED.
-    """
-
-    BACKLOG = "BACKLOG"
-    IN_PROGRESS = "IN_PROGRESS"
-    REVIEW = "REVIEW"
-    DONE = "DONE"
-
-
-class DependencyState(str, enum.Enum):
-    """Derived from the graph on every recompute. Never set by hand.
-
-    READY   - every prerequisite is DONE
-    BLOCKED - at least one prerequisite is not DONE
-    """
-
-    READY = "READY"
-    BLOCKED = "BLOCKED"
-
-
-class DependencyOrigin(str, enum.Enum):
-    """Who created an edge.
-
-    Keeps the graph auditable and lets us measure how often AI suggestions
-    survive human review.
-    """
-
-    HUMAN = "HUMAN"
-    AI_ACCEPTED = "AI_ACCEPTED"
-
-
-class SuggestionStatus(str, enum.Enum):
-    PENDING = "PENDING"
-    ACCEPTED = "ACCEPTED"
-    REJECTED = "REJECTED"
 
 
 class Task(SQLModel, table=True):
@@ -82,8 +48,9 @@ class Task(SQLModel, table=True):
     end_date: date
     duration_days: int = Field(default=1, ge=1)
 
-    # When True the engine treats start_date as a floor and will not schedule
-    # this task any earlier, even if its prerequisites would allow it.
+    # When True the engine will not move this task's dates at all. If its
+    # prerequisites would push it later, the engine honours the pin and reports
+    # the task as over-constrained rather than producing an impossible schedule.
     pinned: bool = False
 
     # Fractional rank within a column. Dropping a card between two others takes
