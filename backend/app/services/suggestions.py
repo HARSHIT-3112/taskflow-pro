@@ -16,9 +16,9 @@ Grounding is layered so that no single failure is enough to corrupt the graph:
                            reviewer judges the reasoning rather than the number
   6. Provenance            accepted edges are stored as AI_ACCEPTED
 
-Note on calibration: the synopsis described using a low temperature. Claude
-Opus 5 removed the sampling parameters (sending `temperature` returns a 400),
-so determinism comes from structured outputs and the confidence floor instead.
+Provider choice lives in app/services/llm.py. Gemini and Claude are both
+supported and the validation below is identical for either, because the
+grounding layers do not depend on which model answered.
 """
 
 from __future__ import annotations
@@ -32,11 +32,10 @@ from app.config import settings
 from app.domain import SuggestionStatus
 from app.engine.graph import find_cycle_path
 from app.models import Dependency, Suggestion, Task
+from app.services.llm import generate_structured
 from app.services.scheduler import load_graph, to_engine_types
 
 logger = logging.getLogger(__name__)
-
-MODEL = "claude-opus-5"
 
 # Below this, a suggestion is noise and is not worth a reviewer's attention.
 CONFIDENCE_FLOOR = 0.55
@@ -119,51 +118,21 @@ def _build_prompt(tasks: list[Task], dependencies: list[Dependency]) -> str:
 
 
 def _ask_model(prompt: str) -> tuple[list[ProposedEdge], str | None]:
-    """Call Claude and parse the response against the schema.
+    """Ask the configured model for candidate edges.
 
-    Returns (proposals, error). A failure never raises: the suggestion feature
-    is an assistant and must not take the board down with it. But the error is
-    returned rather than swallowed, because "the call failed" and "the model
-    found nothing" mean very different things to a user and must not look alike.
+    Which provider answers is decided in app/services/llm.py. Everything below
+    this line in the file - the validation layers - is identical either way,
+    which is the point: the safety properties are structural, not a property of
+    any particular vendor.
     """
-    import anthropic
-
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-
-    try:
-        response = client.messages.parse(
-            model=MODEL,
-            max_tokens=4000,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": prompt}],
-            output_format=ProposedEdges,
-        )
-    except anthropic.AuthenticationError:
-        logger.exception("Anthropic authentication failed")
-        return [], "The configured ANTHROPIC_API_KEY was rejected. Check it in .env."
-    except anthropic.RateLimitError:
-        logger.exception("Anthropic rate limit hit")
-        return [], "Rate limited by the Anthropic API. Try again shortly."
-    except anthropic.BadRequestError as exc:
-        logger.exception("Anthropic rejected the request")
-        message = str(exc)
-        if "credit balance is too low" in message:
-            return [], (
-                "The Anthropic account has no credits. Add credits at "
-                "console.anthropic.com to enable AI suggestions. Everything "
-                "else on the board works without them."
-            )
-        return [], "The Anthropic API rejected the request. See the server log."
-    except Exception:
-        logger.exception("Dependency suggestion request failed")
-        return [], "Could not reach the Anthropic API. See the server log."
-
-    parsed = response.parsed_output
-    if parsed is None:
-        logger.warning("Model returned no parseable suggestions")
-        return [], "The model returned a response that did not match the schema."
-
-    return parsed.suggestions, None
+    result = generate_structured(
+        system_prompt=SYSTEM_PROMPT,
+        user_prompt=prompt,
+        schema=ProposedEdges,
+    )
+    if result.error is not None or result.value is None:
+        return [], result.error or "The model returned nothing usable."
+    return result.value.suggestions, None
 
 
 def generate_suggestions(session: Session) -> tuple[list[Suggestion], str | None]:

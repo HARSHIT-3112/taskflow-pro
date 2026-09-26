@@ -26,8 +26,13 @@ class Settings(BaseSettings):
     # `docker compose up -d` at the repo root.
     database_url: str = "postgresql+psycopg://taskflow:taskflow@localhost:5433/taskflow"
 
-    # Optional. When empty, the AI suggestion feature is disabled and the rest
-    # of the app runs normally, so the board works without an API key.
+    # Optional model providers for the AI suggestion feature. When neither is
+    # set, suggestions are disabled and the rest of the app runs normally, so
+    # the board works without any API key at all.
+    #
+    # Gemini is preferred when both are present: its free tier makes the
+    # feature reproducible for anyone running this project.
+    gemini_api_key: str = ""
     anthropic_api_key: str = ""
 
     # Origins allowed to call this API. Vite uses 5173 by default but steps to
@@ -46,8 +51,8 @@ class Settings(BaseSettings):
 
     @property
     def ai_enabled(self) -> bool:
-        """True when an API key is configured, so callers can degrade gracefully."""
-        return bool(self.anthropic_api_key.strip())
+        """True when any model provider is configured."""
+        return bool(self.gemini_api_key.strip() or self.anthropic_api_key.strip())
 
 
 settings = Settings()

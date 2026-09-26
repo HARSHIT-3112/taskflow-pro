@@ -220,7 +220,7 @@ no write path into the graph at all.
 The model **proposes**; the engine **disposes**.
 
 ```
-board text ──> Claude (claude-opus-5, structured output)
+board text ──> LLM (Gemini or Claude, structured output)
                    │
                    ▼  candidate edges
         ┌──────────────────────────────┐
@@ -249,9 +249,16 @@ failure, that the rationale must quote evidence from the task text, and that
 is a prerequisite of another, and sending less gives the model less to be
 distracted by.
 
-**Calibration note.** The synopsis proposed a low temperature. Claude Opus 5
-removed the sampling parameters (sending `temperature` returns a 400), so
-determinism comes from structured outputs and the confidence floor instead.
+**Provider independence.** `app/services/llm.py` is the only file that knows
+which vendor answers. It exposes one function — given a prompt and a Pydantic
+schema, return instances of that schema or an error string — and both Gemini
+and Claude implement it. Every layer above is identical either way, which is
+the argument that the grounding is *structural* rather than vendor-specific.
+
+**Calibration note.** The synopsis proposed a low temperature. Gemini honours
+`temperature=0.2`. Claude Opus 5 removed the sampling parameters entirely
+(sending `temperature` returns a 400), so on that path determinism comes from
+structured outputs and the confidence floor alone.
 
 **Graceful degradation.** With no API key the board is fully functional and the
 panel explains why suggestions are unavailable. Failures are reported

@@ -9,5 +9,7 @@ psycopg[binary]==3.3.6
 # Reads settings from the .env file into a typed Settings object
 pydantic-settings==2.15.0
 
-# LLM client for the dependency-suggestion feature
+# LLM clients for the dependency-suggestion feature. Either provider works;
+# see app/services/llm.py. Only the one whose key is set is ever called.
+google-genai==2.25.0
 anthropic==1.8.0

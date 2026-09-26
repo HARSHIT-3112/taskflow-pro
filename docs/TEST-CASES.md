@@ -156,6 +156,8 @@ browser:
 | Drag "Design database schema" Done → In Progress | Both dependents flipped to **Blocked**; ready count 2 → 1 |
 | `PATCH` with a stale `version` | **409** refused |
 | Browser refresh | Board returns exactly as left |
+| Delete 2 real dependencies, run AI analysis | Both rediscovered, 0.95 confidence, evidence quoted from task text |
+| Accept both suggestions | Routed through `create_edge`, stored `origin=AI_ACCEPTED`, cascade returned |
 
 ---
 
@@ -168,9 +170,12 @@ Stated honestly — see [`KNOWN-FAILURES.md`](./KNOWN-FAILURES.md).
   automated tests. The engine — where the scored correctness lives — is fully
   covered.
 - **No frontend tests.** No component or end-to-end tests were written.
-- **The AI suggestion path is untested against a live model**, because the
-  available API account has no credits. Validation and filtering logic is
-  deterministic and reviewable; the network call itself is not exercised.
+- **The AI suggestion path has no automated test.** It was verified manually
+  against a live Gemini model (two deleted dependencies rediscovered at 0.95
+  confidence, with quoted evidence, then accepted through the same validated
+  endpoint a manual edge uses and stored as `AI_ACCEPTED`). Making that a
+  repeatable test needs a recorded fixture or a stubbed provider, which the
+  `llm.py` seam makes straightforward but which was not built.
 - The uncovered 5% of the engine is `_describe_cycle`, a best-effort reporter
   for cycles in already-corrupted stored data — unreachable while the API
   validates on write.

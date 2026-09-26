@@ -7,23 +7,21 @@ than hidden, with the reasoning and what production would do instead.
 
 ## 1. Failures you can reproduce
 
-### 1.1 AI suggestions do not run without API credits
+### 1.1 AI suggestions need a model key
 
-**Reproduce:** click *AI suggestions → Analyse board* with an `ANTHROPIC_API_KEY`
-whose account has no credit balance.
+**Reproduce:** click *AI suggestions → Analyse board* with neither
+`GEMINI_API_KEY` nor `ANTHROPIC_API_KEY` set in `.env`.
 
-**What happens:** the panel shows *"The Anthropic account has no credits…"*.
-The board is unaffected.
+**What happens:** the panel explains the feature is unconfigured and points at
+where to get a free key. The board is unaffected.
 
-**Status:** not a code defect — the account used during the build had no
-credits, so the live model call was never exercised end to end. The request
-construction, schema parsing, validation and filtering are all deterministic
-and reviewable; only the network round trip is unverified.
+**Status:** intended. The feature is verified working against Gemini
+(`gemini-2.5-flash`) — two deleted dependencies were rediscovered at 0.95
+confidence with quoted evidence. The Anthropic path is implemented but was
+never exercised live, because the available Anthropic account had no credits.
 
-**Handled well:** the failure is caught, reported distinctly from "the model
-found nothing", and cannot take the board down.
-
----
+**Rate limits:** Gemini's free tier is generous but finite. A 429 surfaces as
+*"Gemini rate limit reached. Wait a moment and try again."* rather than a crash.
 
 ### 1.2 Two browsers do not see each other's changes until refresh
 

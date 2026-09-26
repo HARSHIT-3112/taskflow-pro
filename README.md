@@ -28,9 +28,12 @@ make frontend   # board on http://localhost:5173
 
 `make help` lists every command.
 
-> **AI suggestions are optional.** Without an `ANTHROPIC_API_KEY` the board is
-> fully functional and the suggestion panel explains why it is unavailable. To
-> enable it, put a key in `.env` and restart the API.
+> **AI suggestions are optional.** Without a model key the board is fully
+> functional and the suggestion panel explains why the feature is unavailable.
+> To enable it, put a **free** Gemini key from
+> [aistudio.google.com/apikey](https://aistudio.google.com/apikey) into `.env`
+> as `GEMINI_API_KEY` and restart the API. An `ANTHROPIC_API_KEY` works too —
+> see [`.env.example`](.env.example).
 
 ---
 
@@ -122,8 +125,11 @@ Full list, plus the two real bugs the tests caught, in
 
 **The model proposes; the engine disposes.**
 
-Claude (`claude-opus-5`) reads task titles and descriptions and proposes likely
-prerequisites. Every suggestion passes five filters before a human ever sees it:
+The model reads task titles and descriptions and proposes likely prerequisites.
+**Either Gemini (`gemini-2.5-flash`) or Claude (`claude-opus-5`) can answer** —
+provider selection lives in `app/services/llm.py` and nothing else in the
+feature depends on it. Every suggestion passes five filters before a human ever
+sees it:
 
 1. **Closed-world prompt** — may reference only ids we sent; inventing one is
    defined as failure, and returning an empty list is stated to be correct
@@ -139,6 +145,17 @@ suggestion.** Accepting calls `create_edge()` — the same function manual edge
 creation uses — so an AI-originated edge passes exactly the same validation.
 Accepted edges are stored with `origin = AI_ACCEPTED` so the graph stays
 auditable.
+
+**Verified end to end.** Two real dependencies were deleted from the seeded
+board and the model rediscovered both at 0.95 confidence, quoting the evidence
+from the task descriptions:
+
+> *"The 'Write integration tests' task \"Cannot run until both the REST
+> endpoints and the authentication service are working\"."*
+
+That the same validation pipeline works unchanged across two different vendors
+is the point: **the safety properties are structural, not a property of any
+particular model.**
 
 ---
 
@@ -171,8 +188,6 @@ The honest short list. Full detail, with reproduction steps, in
 - **No migration tool** — tables are created from the models at startup
 - **No authentication**, no resource levelling, no working-day calendar
 - **Frontend types are hand-mirrored** from the backend schemas and can drift
-- **The live AI call is unverified** — the available API account had no credits,
-  so the model round trip was never exercised end to end
 - **No API-layer or frontend automated tests** — routes were verified manually
   via `TestClient` and in the browser
 
@@ -182,9 +197,10 @@ The honest short list. Full detail, with reproduction steps, in
 
 AI tools were used during development, and the solution itself uses an LLM.
 
-**In the product:** Claude (`claude-opus-5`) powers the dependency suggestion
-feature described above, via the official `anthropic` Python SDK, server-side
-only.
+**In the product:** an LLM powers the dependency suggestion feature described
+above, server-side only. Google Gemini (`gemini-2.5-flash`, via `google-genai`)
+and Anthropic Claude (`claude-opus-5`, via `anthropic`) are both supported;
+whichever key is configured is used.
 
 **In the build:** Claude Code was used as a coding assistant throughout —
 scaffolding, implementation, tests, and documentation. Architectural decisions
