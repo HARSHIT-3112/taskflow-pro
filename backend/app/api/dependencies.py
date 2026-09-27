@@ -54,7 +54,7 @@ def create_edge(
     """
     if upstream_id == downstream_id:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="A task cannot depend on itself.",
         )
 

@@ -139,8 +139,9 @@ the purity constraint.
 
 ## 5. Things I would do first with more time
 
-1. **Intra-column reordering** — the most visible gap
-2. **API integration test suite** — the engine is well covered; the routes are not
+1. **Concurrency tests against real Postgres** — the API suite runs on SQLite,
+   which accepts `SELECT ... FOR UPDATE` but does not actually lock, so genuine
+   concurrent-write behaviour is reasoned about rather than tested
 3. **Generated frontend client** from the OpenAPI schema
 4. **Websocket push** so multiple browsers stay in sync
 5. **Alembic migrations**

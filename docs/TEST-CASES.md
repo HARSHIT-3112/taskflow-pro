@@ -7,7 +7,18 @@ make test
 # or: cd backend && .venv/bin/python -m pytest --cov=app --cov-report=term-missing
 ```
 
-**Result: 36 passed. 95% branch coverage of `app/engine/graph.py`.**
+**Result: 63 passed. 95% coverage of the engine, 79% of the application.**
+
+Two suites:
+
+| Suite | Count | What it proves |
+|---|---|---|
+| `test_engine.py` | 36 | The graph maths — the four rules as invariants |
+| `test_api.py` | 27 | The layer around it — status codes, validation, transaction boundaries, optimistic concurrency, cascade shape |
+
+The distinction matters: an engine can be perfectly correct and still unusable
+if a refused write leaves half a change behind, or if the client is never told
+what moved.
 
 These tests encode the rules from the problem statement as **invariants rather
 than examples**, and they need no database — the engine is pure, so the whole
@@ -140,6 +151,34 @@ The original forward-only test passed the *original* dates on the second
 recompute. In production the first pass is persisted before the second runs.
 The engine was correct; the test was not modelling reality. The test now feeds
 back the persisted date, as the API does.
+
+---
+
+## API-layer tests (`test_api.py`)
+
+Run against an in-memory SQLite database so `make test` works with no Docker
+running. Foreign-key enforcement is switched on explicitly, because SQLite
+ignores it by default while Postgres does not — without that, `ON DELETE
+CASCADE` would silently not happen and a test would pass for the wrong reason.
+
+| Group | Proves |
+|---|---|
+| `TestBoardEndpoint` | Empty board is valid; board returns tasks, dependencies and critical path |
+| `TestTaskCrud` | Create / update / delete; `end_date` derived by the engine; a title-only edit does not disturb duration; 404 on unknown |
+| `TestValidation` | Empty title, zero duration, self-dependency and missing tasks are all refused — **and a client cannot set engine-owned fields** even by sending them |
+| `TestOptimisticConcurrency` | Stale writes refused with 409; **a refused write changes nothing**; the edited task is always returned with a usable new version |
+| `TestCycleRejection` | 409; the circular path named in task titles; **the board is byte-identical after a rejection**; duplicates refused |
+| `TestCascadeResponse` | One edit returns every task it moved; no compounding end-to-end through HTTP; removing an edge or deleting a task unblocks the dependent |
+| `TestRollbackOnRegression` | Done → In Progress re-blocks, and the dependent is reported in the same response |
+| `TestSuggestionsEndpoint` | Degrades correctly with no provider configured; 404 on unknown suggestion |
+
+### A regression test worth naming
+
+`test_the_edited_task_is_always_returned` exists because of a real bug found
+during verification: a move that shifted no dates returned an empty `affected`
+list, so the client never learned the task's new `version` and its next edit was
+refused with a spurious stale-version 409. The test asserts both that the task
+comes back and that the returned version is immediately usable.
 
 ---
 
