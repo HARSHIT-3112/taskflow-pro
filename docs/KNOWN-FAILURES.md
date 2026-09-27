@@ -63,18 +63,17 @@ suggested fix, and no way to see *by how much* the schedule is impossible.
 
 ---
 
-### 1.5 Dragging within a column does not reorder
+### 1.5 Reordering is "insert above", with no drop-at-end target
 
-**Reproduce:** drag a card above another in the same column.
+**Reproduce:** drag a card below the last card in a column.
 
-**What happens:** nothing. Only column-to-column moves are handled; a card
-dropped in its own column returns to place.
+**What happens:** dropping onto a card inserts the dragged card *directly
+above* it. There is no separate drop zone for "put this at the very bottom", so
+making a card last means dropping it on the column background below the cards.
 
-**Why:** `position` is a fractional rank and the persistence works, but the
-drop-index calculation for intra-column sorting was cut for time. Cross-column
-movement — the actual requirement — works and persists.
-
----
+**Why:** the semantics are deliberately one rule — drop on a card, land above
+it — because it is predictable and writes exactly one row. A full sortable
+implementation with above/below detection would be the polished version.
 
 ### 1.6 Very long task titles overflow a card
 

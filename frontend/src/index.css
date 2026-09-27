@@ -292,3 +292,6 @@ input:focus, textarea:focus, select:focus {
 .node--critical .node__box { stroke: var(--critical); stroke-width: 2.4; }
 .node--selected .node__box { stroke: var(--accent); stroke-width: 2.8; }
 .node:hover .node__box { filter: brightness(0.97); }
+
+/* Insertion indicator while dragging a card over another card. */
+.card--drop-before { box-shadow: 0 -3px 0 0 var(--accent), var(--shadow); }

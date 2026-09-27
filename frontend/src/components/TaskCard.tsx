@@ -5,7 +5,7 @@
  * holds no state and never calls the API.
  */
 
-import { useDraggable } from "@dnd-kit/core";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 import type { Task } from "../types";
 
 interface Props {
@@ -32,11 +32,20 @@ export function TaskCard({
   overConstrained,
   onOpen,
 }: Props) {
-  // dnd-kit gives us the handlers that make this element draggable, plus a
-  // transform describing where the pointer has moved it.
+  // A card is both draggable and a drop target. Being droppable is what makes
+  // reordering possible: dropping card A onto card B means "put A just before
+  // B", which the board turns into a fractional position between B and its
+  // neighbour.
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
   });
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: task.id });
+
+  /** Attach both dnd-kit refs to the same element. */
+  const setRefs = (node: HTMLElement | null) => {
+    setNodeRef(node);
+    setDropRef(node);
+  };
 
   const style = transform
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
@@ -48,11 +57,12 @@ export function TaskCard({
 
   return (
     <article
-      ref={setNodeRef}
+      ref={setRefs}
       style={style}
       className={[
         "card",
         isDragging ? "card--dragging" : "",
+        isOver && !isDragging ? "card--drop-before" : "",
         onCriticalPath ? "card--critical" : "",
         isBlocked && showState ? "card--blocked" : "",
       ]

@@ -5,7 +5,7 @@
  * decides what is on screen.
  */
 
-import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { useMemo, useState } from "react";
 import { Column } from "./components/Column";
@@ -60,22 +60,56 @@ export default function App() {
     ? board.tasks.find((t) => t.id === openTaskId) ?? null
     : null;
 
+  /**
+   * Drag-and-drop, for both cases:
+   *
+   *   dropped on a COLUMN  -> append to the end of that column
+   *   dropped on a CARD    -> insert immediately before that card
+   *
+   * Either way exactly one row is written, because `position` is a float: a
+   * card landing between 1.0 and 2.0 simply takes 1.5. No renumbering.
+   */
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over) return;
 
     const task = board.tasks.find((t) => t.id === active.id);
-    const targetColumn = over.id as TaskStatus;
-    if (!task || task.status === targetColumn) return;
+    if (!task || active.id === over.id) return;
 
-    // Append to the end of the target column. Fractional positions mean we
-    // only ever write this one row, never renumber the column.
-    const columnTasks = tasksByColumn.get(targetColumn) ?? [];
-    const lastPosition = columnTasks.length
-      ? Math.max(...columnTasks.map((t) => t.position))
-      : 0;
+    const overId = String(over.id);
+    const overColumn = COLUMNS.find((c) => c.id === overId);
 
-    void board.moveTask(task, targetColumn, lastPosition + 1);
+    if (overColumn) {
+      // Dropped on empty column space. Moving within the same column this way
+      // is a no-op: there is no card to position relative to.
+      if (task.status === overColumn.id) return;
+
+      const columnTasks = tasksByColumn.get(overColumn.id) ?? [];
+      const lastPosition = columnTasks.length
+        ? Math.max(...columnTasks.map((t) => t.position))
+        : 0;
+
+      void board.moveTask(task, overColumn.id, lastPosition + 1);
+      return;
+    }
+
+    // Dropped on another card: insert directly above it.
+    const target = board.tasks.find((t) => t.id === overId);
+    if (!target) return;
+
+    const columnTasks = (tasksByColumn.get(target.status) ?? []).filter(
+      (t) => t.id !== task.id,
+    );
+    const index = columnTasks.findIndex((t) => t.id === target.id);
+    const above = index > 0 ? columnTasks[index - 1] : null;
+
+    // Midpoint between the card above and the target, or one step before the
+    // target when it is already first in the column.
+    const position = above
+      ? (above.position + target.position) / 2
+      : target.position - 1;
+
+    void board.moveTask(task, target.status, position);
   }
 
   async function handleCreate() {
@@ -180,7 +214,11 @@ export default function App() {
         <p className="loading">Loading board…</p>
       ) : (
         <main className="layout">
-          <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
             <div className="board">
               {COLUMNS.map((column) => (
                 <Column

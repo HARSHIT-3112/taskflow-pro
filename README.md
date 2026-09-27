@@ -182,7 +182,8 @@ particular model.**
 The honest short list. Full detail, with reproduction steps, in
 [`docs/KNOWN-FAILURES.md`](docs/KNOWN-FAILURES.md).
 
-- **Dragging within a column does not reorder** — only column-to-column moves
+- **Reordering is "insert above"** — dropping on a card puts the dragged card
+  directly above it; there is no dedicated drop-at-end target
 - **No realtime sync.** Conflicts between two browsers are *detected* (409 via
   optimistic concurrency) but not pushed
 - **No "compress schedule" action** to reclaim slack after an early finish

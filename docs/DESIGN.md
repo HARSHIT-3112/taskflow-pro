@@ -194,7 +194,9 @@ Three decisions worth defending:
   they could contradict each other. Removing that possibility removes a class
   of bugs.
 - **`position` is a float.** A card dropped between `1.0` and `2.0` takes
-  `1.5` — one row written, never a column renumber.
+  `1.5` — one row written, never a column renumber. This is what makes
+  reordering within a column cheap: dropping card A onto card B computes the
+  midpoint between B and the card above it, and a single `UPDATE` follows.
 - **`dependency_state` is denormalised, not authoritative.** The engine writes
   it so the board renders without recomputing. Nothing reads it to make a
   decision. Delete the column, recompute from the graph, and you get identical
