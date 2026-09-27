@@ -22,18 +22,24 @@ setup: ## One-command setup: database, dependencies, tables and seed data
 	$(PIP) install --quiet --upgrade pip
 	$(PIP) install --quiet -r $(BACKEND)/requirements-dev.txt
 	@test -f .env || (cp .env.example .env && echo "==> Created .env from .env.example")
+	@echo "==> Installing frontend dependencies"
+	cd frontend && npm install --silent
 	@echo "==> Seeding the board"
 	cd $(BACKEND) && .venv/bin/python seed.py
 	@echo ""
-	@echo "Setup complete. Start the API with:  make backend"
+	@echo "Setup complete. Now run these in two terminals:"
+	@echo "    make backend     API   -> http://localhost:8000  (docs at /docs)"
+	@echo "    make frontend    Board -> http://localhost:5173"
 
 db: ## Start Postgres only
 	docker compose up -d
 
 backend: ## Run the API at http://localhost:8000 (docs at /docs)
+	@test -d $(BACKEND)/.venv || (echo "Run 'make setup' first." && exit 1)
 	cd $(BACKEND) && .venv/bin/uvicorn app.main:app --reload --port 8000
 
 frontend: ## Run the React dev server at http://localhost:5173
+	@test -d frontend/node_modules || (echo "==> Installing frontend dependencies first" && cd frontend && npm install --silent)
 	cd frontend && npm run dev
 
 seed: ## Reset the board to the demo project
