@@ -1,5 +1,7 @@
 # TaskFlow Pro
 
+**Live demo: https://taskflow-pro-two-zeta.vercel.app**
+
 A Kanban board where a **DAG engine** decides which tasks are ready, which are
 blocked, and how a schedule change cascades.
 
@@ -9,7 +11,20 @@ puts that graph behind the board and keeps it correct under continuous editing.
 
 ---
 
-## Quick start
+## Try it without installing anything
+
+**https://taskflow-pro-two-zeta.vercel.app**
+
+Deployed on Vercel: the React board is served as static files and the FastAPI
+app runs as a Python function on the same origin, with Postgres hosted on
+Supabase. The database seeds itself when empty, so the demo project is already
+there. The 60-second walkthrough below works on the live site exactly as it
+does locally.
+
+> First request after a quiet period may take a few seconds while the function
+> cold-starts.
+
+## Quick start (local)
 
 **Requirements:** Docker, Python 3.12+, Node 20+.
 
@@ -70,6 +85,8 @@ docs/       DESIGN.md · TEST-CASES.md · KNOWN-FAILURES.md
 
 **The governing invariant:** the engine alone decides dates and dependency
 state; the board never computes, it renders what the engine returns.
+
+**Deployed:** Vercel (static frontend + Python function, one origin) · Supabase Postgres.
 
 **Stack:** FastAPI · SQLModel · PostgreSQL 16 · React · TypeScript · dnd-kit ·
 pytest · ruff. The interface is hand-written CSS with design tokens — no UI
