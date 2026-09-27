@@ -72,7 +72,8 @@ docs/       DESIGN.md · TEST-CASES.md · KNOWN-FAILURES.md
 state; the board never computes, it renders what the engine returns.
 
 **Stack:** FastAPI · SQLModel · PostgreSQL 16 · React · TypeScript · dnd-kit ·
-pytest · ruff.
+pytest · ruff. The interface is hand-written CSS with design tokens — no UI
+framework — and follows the system light/dark preference.
 
 Full detail in [`docs/DESIGN.md`](docs/DESIGN.md).
 
