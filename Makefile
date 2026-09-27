@@ -45,8 +45,20 @@ frontend: ## Run the React dev server at http://localhost:5173
 seed: ## Reset the board to the demo project
 	cd $(BACKEND) && .venv/bin/python seed.py
 
-test: ## Run the test suite with coverage
+test: ## Run every test (backend + frontend)
+	@echo "==> Backend"
 	cd $(BACKEND) && .venv/bin/python -m pytest --cov=app --cov-report=term-missing
+	@echo ""
+	@echo "==> Frontend"
+	@test -d frontend/node_modules || (cd frontend && npm install --silent)
+	cd frontend && npm run test
+
+test-backend: ## Backend tests only
+	cd $(BACKEND) && .venv/bin/python -m pytest --cov=app --cov-report=term-missing
+
+test-frontend: ## Frontend tests only
+	@test -d frontend/node_modules || (cd frontend && npm install --silent)
+	cd frontend && npm run test
 
 lint: ## Check formatting and lint rules
 	cd $(BACKEND) && .venv/bin/ruff check app tests

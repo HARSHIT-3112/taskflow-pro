@@ -7,14 +7,17 @@ make test
 # or: cd backend && .venv/bin/python -m pytest --cov=app --cov-report=term-missing
 ```
 
-**Result: 63 passed. 95% coverage of the engine, 79% of the application.**
+**Result: 89 passed — 75 backend, 14 frontend. 95% coverage of the engine,
+79% of the backend application.**
 
-Two suites:
+Four suites:
 
 | Suite | Count | What it proves |
 |---|---|---|
 | `test_engine.py` | 36 | The graph maths — the four rules as invariants |
-| `test_api.py` | 27 | The layer around it — status codes, validation, transaction boundaries, optimistic concurrency, cascade shape |
+| `test_api.py` | 34 | The layer around it — status codes, validation, transaction boundaries, optimistic concurrency, cascade shape, dry-run preview |
+| `test_concurrency.py` | 5 | Row locking and refused writes, against **real PostgreSQL** |
+| frontend (Vitest) | 14 | The card's reporting of engine state, and the client's contract with the server |
 
 The distinction matters: an engine can be perfectly correct and still unusable
 if a refused write leaves half a change behind, or if the client is never told
@@ -182,6 +185,57 @@ comes back and that the returned version is immediately usable.
 
 ---
 
+## Concurrency tests (`test_concurrency.py`) — real PostgreSQL
+
+The rest of the backend suite runs on SQLite, which accepts
+`SELECT ... FOR UPDATE` without actually locking. That makes it useless for the
+claims this project makes about concurrent writes, so these five tests run
+against the Postgres `docker compose` starts, in a schema of their own so a
+running board is never disturbed. They **skip** rather than fail when no
+database is reachable, keeping `make test` usable without Docker.
+
+| Test | Proves |
+|---|---|
+| `test_select_for_update_is_really_issued` | A second transaction using `NOWAIT` is genuinely refused while the first holds the rows — if locking were a no-op this would pass silently |
+| `test_lock_is_released_after_commit` | The lock's lifetime is the transaction |
+| `test_two_sessions_editing_the_same_task_do_not_both_win` | A stale version cannot overwrite a newer one |
+| `test_a_refused_cycle_commits_nothing` | Rule 1 at the storage layer, on a database with real transactions |
+| `test_a_failed_transaction_leaves_no_partial_write` | A mutation that raises midway leaves nothing behind |
+
+---
+
+## Frontend tests (Vitest + Testing Library)
+
+```bash
+make test-frontend
+```
+
+**`TaskCard.test.tsx` (8)** — the card is where the engine's verdict becomes
+something a person reads, so these cover the places where the display
+deliberately differs from the raw data:
+
+- Ready / Blocked shown correctly, and what a blocked task is waiting on
+- **The state badge is hidden on a Done task** — a finished card's Ready badge
+  is meaningless noise
+- **Blocked is shown on an IN_PROGRESS task** — the rollback rule requires that
+  state to exist
+- Critical-path and over-constrained flags
+- A click reports upward rather than being handled in the card
+
+The test harness configures the same 6px drag-activation distance the app uses,
+because that is what lets a click through instead of registering a zero-pixel
+drag. A harness without it would not be testing the real component.
+
+**`useBoard.test.tsx` (6)** — the client's contract with the server:
+
+- `affected` is **merged**, not substituted (replacing would erase untouched tasks)
+- A move paints optimistically while the request is still in flight
+- A refused mutation **restores exactly what was on screen before**
+- A cycle rejection surfaces the offending path as a readable notice
+- An unreachable API reports itself instead of rendering an empty board
+
+---
+
 ## Manual / end-to-end verification
 
 Run against a real Postgres instance via `TestClient`, and confirmed in the
@@ -208,7 +262,6 @@ Stated honestly — see [`KNOWN-FAILURES.md`](./KNOWN-FAILURES.md).
   `TestClient` and in the browser, but those checks are not committed as
   automated tests. The engine — where the scored correctness lives — is fully
   covered.
-- **No frontend tests.** No component or end-to-end tests were written.
 - **The AI suggestion path has no automated test.** It was verified manually
   against a live Gemini model (two deleted dependencies rediscovered at 0.95
   confidence, with quoted evidence, then accepted through the same validated

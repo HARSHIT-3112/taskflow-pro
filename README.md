@@ -126,7 +126,7 @@ stored graph untouched.
 ## Testing
 
 ```bash
-make test    # 63 tests — 95% coverage of the engine, 79% overall
+make test    # 89 tests — 75 backend, 14 frontend
 make lint
 ```
 
@@ -208,9 +208,8 @@ The honest short list. Full detail, with reproduction steps, in
 - **No migration tool** — tables are created from the models at startup
 - **No authentication**, no resource levelling, no working-day calendar
 - **Frontend types are hand-mirrored** from the backend schemas and can drift
-- **No frontend automated tests** — the board was verified manually in a browser
-- **Concurrency is reasoned about, not tested** — the API suite runs on SQLite,
-  which accepts row-lock syntax without actually locking
+- **No end-to-end browser tests** — components and the state hook are tested,
+  but nothing drives a real browser
 
 ---
 

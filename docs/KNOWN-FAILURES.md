@@ -139,9 +139,8 @@ the purity constraint.
 
 ## 5. Things I would do first with more time
 
-1. **Concurrency tests against real Postgres** — the API suite runs on SQLite,
-   which accepts `SELECT ... FOR UPDATE` but does not actually lock, so genuine
-   concurrent-write behaviour is reasoned about rather than tested
+1. **End-to-end browser tests** — components and the state hook have unit
+   tests, but nothing drives a real browser through a full drag
 3. **Generated frontend client** from the OpenAPI schema
 4. **Websocket push** so multiple browsers stay in sync
 5. **Alembic migrations**
