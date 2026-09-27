@@ -8,6 +8,7 @@ Interactive API docs are then at http://localhost:8000/docs
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -23,8 +24,30 @@ from app.db import create_db_and_tables
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    """Create any missing tables once, at startup."""
+    """Create any missing tables, and seed an empty database, at startup.
+
+    Seeding only happens when the task table is completely empty, so it never
+    touches a board someone is using. It makes a fresh deployment
+    self-contained: no shell access is needed to get a demo board.
+    """
     create_db_and_tables()
+
+    if settings.seed_if_empty:
+        from sqlmodel import Session, select
+
+        from app.db import engine
+        from app.models import Task
+
+        try:
+            with Session(engine) as session:
+                if session.exec(select(Task)).first() is None:
+                    from seed import seed
+
+                    seed()
+        except Exception:
+            # A seeding failure must never stop the API from serving.
+            logging.getLogger(__name__).exception("Could not seed an empty database")
+
     yield
 
 

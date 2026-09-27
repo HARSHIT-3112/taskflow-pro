@@ -1,0 +1,4 @@
+# Dependencies for the Vercel Python serverless function (api/index.py).
+# Mirrors backend/requirements.txt; the local development install still uses
+# backend/requirements-dev.txt.
+-r backend/requirements.txt

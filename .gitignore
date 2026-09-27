@@ -39,3 +39,6 @@ npm-debug.log*
 CLAUDE.md
 AGENTS.md
 .claude/
+
+# Vercel CLI local state
+.vercel/

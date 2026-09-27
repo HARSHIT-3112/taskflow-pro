@@ -1,0 +1,13 @@
+# Keep the upload small and free of anything that must not leave the machine.
+.env
+.env.*
+!.env.example
+backend/.venv/
+frontend/node_modules/
+frontend/dist/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+docs/

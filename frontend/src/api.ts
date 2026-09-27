@@ -6,7 +6,18 @@
 
 import type { Board, MutationResult, SuggestionList, TaskStatus } from "./types";
 
-const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+/**
+ * Where the API lives.
+ *
+ * In a production build the API is served from the same origin (see
+ * vercel.json), so an empty base makes every call relative - "/api/board" -
+ * which means no CORS preflight and nothing to configure per environment.
+ *
+ * In development the Vite server and the API are separate origins, so we point
+ * at the documented local port. VITE_API_URL overrides either case.
+ */
+const BASE =
+  import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? "" : "http://localhost:8000");
 
 /**
  * Thrown for any non-2xx response.

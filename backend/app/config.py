@@ -51,6 +51,30 @@ class Settings(BaseSettings):
 
     cors_localhost_regex: str = r"http://(localhost|127\.0\.0\.1)(:\d+)?"
 
+    # When the task table is empty at startup, create the demo project. Makes a
+    # fresh deployment self-contained: no shell access needed to seed it.
+    seed_if_empty: bool = True
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _normalise_database_url(cls, value: object) -> object:
+        """Accept the URL shapes hosted Postgres providers hand out.
+
+        Neon, Supabase, Render and Heroku all provide `postgres://` or
+        `postgresql://` URLs. SQLAlchemy needs the driver named explicitly, so
+        without this the deployed app fails at startup with an opaque dialect
+        error - a classic works-locally-breaks-in-production trap.
+        """
+        if not isinstance(value, str) or not value:
+            return value
+        for prefix in ("postgresql+psycopg://", "postgresql+asyncpg://"):
+            if value.startswith(prefix):
+                return value
+        for prefix in ("postgres://", "postgresql://"):
+            if value.startswith(prefix):
+                return "postgresql+psycopg://" + value[len(prefix):]
+        return value
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _parse_origins(cls, value: object) -> object:
