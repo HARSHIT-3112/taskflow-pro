@@ -17,6 +17,8 @@ as it was.
 
 from __future__ import annotations
 
+from datetime import date
+
 from sqlmodel import Session, select
 
 from app.domain import Edge, ScheduledTask, TaskNode
@@ -152,27 +154,55 @@ def preview_recompute(
     *,
     task_id: str,
     duration_days: int | None = None,
-    start_date: object | None = None,
-) -> dict[str, ScheduledTask]:
-    """Score a hypothetical edit WITHOUT writing anything (the dry-run preview).
+    start_date: date | None = None,
+) -> list[tuple[Task, ScheduledTask]]:
+    """Score a hypothetical edit WITHOUT writing anything - the dry-run preview.
 
-    This costs almost nothing to provide: the engine has no side effects, so we
-    simply build a modified copy of the node list and run the same function. The
-    session is never written to, so the caller can roll back or simply not commit.
+    Returns (task, predicted) for every task the edit would move, so a caller
+    can show the blast radius of a change before committing to it.
+
+    This costs almost nothing to provide, and that is the point: the engine is
+    pure, so running it on a modified copy of the node list is the whole
+    implementation. Nothing is written and the session is never flushed, which
+    is only safe because the engine has no side effects to undo.
     """
     tasks, dependencies = load_graph(session)
     nodes, edges = to_engine_types(tasks, dependencies)
 
-    hypothetical = []
-    for node in nodes:
-        if node.id == task_id:
-            node = TaskNode(
-                id=node.id,
-                duration_days=duration_days if duration_days is not None else node.duration_days,
-                start_date=start_date or node.start_date,  # type: ignore[arg-type]
-                status=node.status,
-                pinned=node.pinned,
-            )
-        hypothetical.append(node)
+    hypothetical = [
+        TaskNode(
+            id=node.id,
+            duration_days=(
+                duration_days
+                if duration_days is not None and node.id == task_id
+                else node.duration_days
+            ),
+            start_date=(
+                start_date
+                if start_date is not None and node.id == task_id
+                else node.start_date
+            ),
+            status=node.status,
+            pinned=node.pinned,
+        )
+        for node in nodes
+    ]
 
-    return recompute(hypothetical, edges)
+    predicted = recompute(hypothetical, edges)
+
+    moved: list[tuple[Task, ScheduledTask]] = []
+    for task in tasks:
+        # The edited task is the cause, not an effect. The question a preview
+        # answers is "what ELSE does this move?", so leave it out.
+        if task.id == task_id:
+            continue
+
+        result = predicted.get(task.id)
+        if result is None:
+            continue
+        if result.start_date != task.start_date or result.end_date != task.end_date:
+            moved.append((task, result))
+
+    # Soonest-moving first, so the most immediate consequence reads at the top.
+    moved.sort(key=lambda pair: (pair[1].start_date, pair[0].title))
+    return moved

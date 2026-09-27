@@ -4,7 +4,13 @@
  * never touch fetch directly.
  */
 
-import type { Board, MutationResult, SuggestionList, TaskStatus } from "./types";
+import type {
+  Board,
+  MutationResult,
+  PreviewResult,
+  SuggestionList,
+  TaskStatus,
+} from "./types";
 
 /**
  * Where the API lives.
@@ -145,3 +151,18 @@ export const acceptSuggestion = (id: string) =>
 
 export const rejectSuggestion = (id: string) =>
   request<SuggestionList>(`/api/suggestions/${id}/reject`, { method: "POST" });
+
+/**
+ * Score an edit without saving it.
+ *
+ * Nothing is written server-side, so this is safe to call while the user is
+ * still typing.
+ */
+export const previewTask = (
+  id: string,
+  input: { start_date?: string; duration_days?: number },
+) =>
+  request<PreviewResult>(`/api/tasks/${id}/preview`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });

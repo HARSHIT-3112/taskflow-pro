@@ -24,12 +24,15 @@ from app.schemas import (
     BoardRead,
     DependencyRead,
     MutationResult,
+    PreviewedMove,
+    PreviewResult,
     TaskCreate,
     TaskMove,
+    TaskPreview,
     TaskRead,
     TaskUpdate,
 )
-from app.services.scheduler import recompute_board
+from app.services.scheduler import preview_recompute, recompute_board
 
 router = APIRouter(prefix="/api", tags=["tasks"])
 
@@ -136,6 +139,41 @@ def create_task(
     session.flush()  # assign the id without committing yet
 
     return _result(session, touched=task)
+
+
+@router.post("/tasks/{task_id}/preview", response_model=PreviewResult)
+def preview_task_change(
+    task_id: str,
+    payload: TaskPreview,
+    session: Session = Depends(get_session),
+) -> PreviewResult:
+    """Score an edit without saving it: what would this change move?
+
+    Nothing is written. The engine is pure, so the same recompute runs against
+    a modified copy of the graph and the session is never flushed - which is
+    exactly why a dry run costs almost nothing to offer.
+    """
+    _get_task_or_404(session, task_id)
+
+    moved = preview_recompute(
+        session,
+        task_id=task_id,
+        duration_days=payload.duration_days,
+        start_date=payload.start_date,
+    )
+
+    return PreviewResult(
+        moves=[
+            PreviewedMove(
+                id=task.id,
+                title=task.title,
+                from_start=task.start_date,
+                to_start=result.start_date,
+                shift_days=(result.start_date - task.start_date).days,
+            )
+            for task, result in moved
+        ]
+    )
 
 
 @router.patch("/tasks/{task_id}", response_model=MutationResult)

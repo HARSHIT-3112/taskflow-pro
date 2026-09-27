@@ -96,3 +96,16 @@ export interface SuggestionList {
   /** Distinguishes "the call failed" from "the model found nothing". */
   error: string | null;
 }
+
+/** One task a hypothetical edit would move (the dry-run preview). */
+export interface PreviewedMove {
+  id: string;
+  title: string;
+  from_start: string;
+  to_start: string;
+  shift_days: number;
+}
+
+export interface PreviewResult {
+  moves: PreviewedMove[];
+}

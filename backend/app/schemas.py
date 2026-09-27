@@ -60,6 +60,33 @@ class TaskMove(BaseModel):
     position: float
 
 
+class TaskPreview(BaseModel):
+    """A hypothetical edit to score without saving it."""
+
+    start_date: date | None = None
+    duration_days: int | None = Field(default=None, ge=1, le=365)
+
+
+class PreviewedMove(BaseModel):
+    """One task the hypothetical edit would move."""
+
+    id: str
+    title: str
+    from_start: date
+    to_start: date
+    shift_days: int
+
+
+class PreviewResult(BaseModel):
+    """The blast radius of a change, computed without writing anything.
+
+    Cheap to provide because the engine is pure: the same recompute runs on a
+    modified copy of the graph and nothing is persisted.
+    """
+
+    moves: list[PreviewedMove]
+
+
 class TaskRead(BaseModel):
     """A task as the client sees it."""
 

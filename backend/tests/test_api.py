@@ -324,3 +324,90 @@ class TestSuggestionsEndpoint:
     ) -> None:
         assert client.post("/api/suggestions/missing/accept").status_code == 404
         assert client.post("/api/suggestions/missing/reject").status_code == 404
+
+
+class TestDryRunPreview:
+    """The synopsis promised a dry run: see the blast radius before committing.
+
+    The interesting property is not the numbers - the engine tests already
+    cover those - but that asking the question changes nothing.
+    """
+
+    def test_preview_reports_what_a_change_would_move(
+        self, client: TestClient, diamond: dict
+    ) -> None:
+        response = client.post(
+            f"/api/tasks/{diamond['A']['id']}/preview",
+            json={"duration_days": 6},
+        )
+        assert response.status_code == 200
+
+        moves = {m["title"]: m for m in response.json()["moves"]}
+        assert {"B", "C", "D"} <= set(moves), "downstream tasks should be listed"
+
+    def test_preview_respects_no_compounding(
+        self, client: TestClient, diamond: dict
+    ) -> None:
+        """The prediction must match what actually happens: D moves 3, not 6."""
+        response = client.post(
+            f"/api/tasks/{diamond['A']['id']}/preview",
+            json={"duration_days": 6},
+        )
+        moves = {m["title"]: m for m in response.json()["moves"]}
+        assert moves["D"]["shift_days"] == 3
+
+    def test_preview_writes_nothing(self, client: TestClient, diamond: dict) -> None:
+        """THE property that makes a dry run a dry run."""
+        before = raw_board(client)
+
+        client.post(
+            f"/api/tasks/{diamond['A']['id']}/preview",
+            json={"duration_days": 60, "start_date": "2027-01-01"},
+        )
+
+        assert raw_board(client) == before, "a preview must not touch the board"
+
+    def test_prediction_matches_the_real_edit(
+        self, client: TestClient, diamond: dict
+    ) -> None:
+        """Preview then commit: the board must land exactly where it was promised."""
+        predicted = {
+            m["title"]: m["to_start"]
+            for m in client.post(
+                f"/api/tasks/{diamond['A']['id']}/preview",
+                json={"duration_days": 6},
+            ).json()["moves"]
+        }
+
+        client.patch(
+            f"/api/tasks/{diamond['A']['id']}",
+            json={"version": diamond["A"]["version"], "duration_days": 6},
+        )
+
+        actual = board(client)
+        for title, promised_start in predicted.items():
+            assert actual[title]["start_date"] == promised_start, (
+                f"{title} was predicted to start {promised_start} "
+                f"but actually starts {actual[title]['start_date']}"
+            )
+
+    def test_the_edited_task_is_not_listed_as_an_effect(
+        self, client: TestClient, diamond: dict
+    ) -> None:
+        """A preview answers "what ELSE moves?" - the edited task is the cause."""
+        moves = client.post(
+            f"/api/tasks/{diamond['A']['id']}/preview", json={"duration_days": 6}
+        ).json()["moves"]
+        assert all(m["id"] != diamond["A"]["id"] for m in moves)
+
+    def test_an_edit_with_no_downstream_effect_reports_nothing(
+        self, client: TestClient
+    ) -> None:
+        lonely = make_task(client, "Lonely", days=2)
+        response = client.post(
+            f"/api/tasks/{lonely['id']}/preview", json={"duration_days": 3}
+        )
+        assert response.json()["moves"] == []
+
+    def test_preview_of_a_missing_task_returns_404(self, client: TestClient) -> None:
+        assert client.post("/api/tasks/ghost/preview", json={}).status_code == 404

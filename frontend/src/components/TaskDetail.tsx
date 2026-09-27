@@ -6,7 +6,8 @@
  */
 
 import { useEffect, useState } from "react";
-import type { Dependency, Task } from "../types";
+import * as api from "../api";
+import type { Dependency, PreviewedMove, Task } from "../types";
 
 interface Props {
   task: Task;
@@ -36,6 +37,8 @@ export function TaskDetail({
   const [pinned, setPinned] = useState(task.pinned);
   const [newUpstream, setNewUpstream] = useState("");
   const [saving, setSaving] = useState(false);
+  const [preview, setPreview] = useState<PreviewedMove[] | null>(null);
+  const [previewing, setPreviewing] = useState(false);
 
   // The server may move this task while the panel is open (a cascade from an
   // edit elsewhere). Re-sync the form when that happens.
@@ -45,7 +48,47 @@ export function TaskDetail({
     setStartDate(task.start_date);
     setDuration(task.duration_days);
     setPinned(task.pinned);
+    setPreview(null);
   }, [task]);
+
+  /**
+   * Dry run: ask the server what this edit WOULD move, without saving.
+   *
+   * Debounced because it fires while the user is still typing a duration. It
+   * is safe to call freely - the endpoint writes nothing - but there is no
+   * point sending a request per keystroke.
+   */
+  useEffect(() => {
+    const unchanged =
+      startDate === task.start_date && duration === task.duration_days;
+
+    if (unchanged) {
+      setPreview(null);
+      return;
+    }
+
+    let cancelled = false;
+    setPreviewing(true);
+
+    const timer = setTimeout(() => {
+      api
+        .previewTask(task.id, { start_date: startDate, duration_days: duration })
+        .then((result) => {
+          if (!cancelled) setPreview(result.moves);
+        })
+        .catch(() => {
+          if (!cancelled) setPreview(null);
+        })
+        .finally(() => {
+          if (!cancelled) setPreviewing(false);
+        });
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [task.id, task.start_date, task.duration_days, startDate, duration]);
 
   const byId = new Map(allTasks.map((t) => [t.id, t]));
 
@@ -150,6 +193,42 @@ export function TaskDetail({
             Starts when it does because <strong>{bindingConstraint.title}</strong> finishes
             on {bindingConstraint.end_date}.
           </p>
+        )}
+
+        {(previewing || preview) && (
+          <section className="preview" aria-live="polite">
+            <h4 className="preview__title">
+              If you save this
+              {previewing && <span className="preview__spinner"> checking…</span>}
+            </h4>
+
+            {preview && preview.length === 0 && (
+              <p className="preview__none">Nothing else moves.</p>
+            )}
+
+            {preview && preview.length > 0 && (
+              <>
+                <p className="preview__summary">
+                  {preview.length} downstream {preview.length === 1 ? "task" : "tasks"} would
+                  move. Nothing is saved until you press Save.
+                </p>
+                <ul className="preview__list">
+                  {preview.map((move) => (
+                    <li key={move.id} className="preview__item">
+                      <span className="preview__task">{move.title}</span>
+                      <span
+                        className={
+                          move.shift_days > 0 ? "preview__shift preview__shift--later" : "preview__shift"
+                        }
+                      >
+                        {move.shift_days > 0 ? `+${move.shift_days}d` : `${move.shift_days}d`}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </section>
         )}
 
         <div className="detail__actions">
