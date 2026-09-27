@@ -42,3 +42,4 @@ AGENTS.md
 
 # Vercel CLI local state
 .vercel/
+.vercel

@@ -1,4 +1,13 @@
-# Dependencies for the Vercel Python serverless function (api/index.py).
-# Mirrors backend/requirements.txt; the local development install still uses
-# backend/requirements-dev.txt.
--r backend/requirements.txt
+# Runtime dependencies for the Vercel Python function (api/index.py).
+#
+# Vercel's requirements parser does not support "-r other-file.txt", so these
+# pins are duplicated from backend/requirements.txt rather than included.
+# Keep the two in sync; backend/requirements.txt remains the one used for local
+# development and is the file the README points at.
+
+fastapi==0.141.1
+sqlmodel==0.0.47
+psycopg[binary]==3.3.6
+pydantic-settings==2.15.0
+google-genai==2.25.0
+anthropic==1.8.0
