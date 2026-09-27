@@ -7,8 +7,10 @@ DATABASE_URL fails immediately with a clear error instead of at the first query.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # backend/app/config.py -> backend/app -> backend -> repo root
@@ -48,6 +50,25 @@ class Settings(BaseSettings):
     cors_origins: list[str] = []
 
     cors_localhost_regex: str = r"http://(localhost|127\.0\.0\.1)(:\d+)?"
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def _parse_origins(cls, value: object) -> object:
+        """Accept an empty value or a comma-separated list from .env.
+
+        Without this, pydantic tries to JSON-decode the raw string, so the
+        perfectly reasonable `CORS_ORIGINS=` in a .env file crashes startup.
+        """
+        if value is None:
+            return []
+        if isinstance(value, str):
+            stripped = value.strip()
+            if not stripped:
+                return []
+            if stripped.startswith("["):
+                return json.loads(stripped)
+            return [part.strip() for part in stripped.split(",") if part.strip()]
+        return value
 
     @property
     def ai_enabled(self) -> bool:
