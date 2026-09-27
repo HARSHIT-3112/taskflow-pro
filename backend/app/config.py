@@ -35,19 +35,19 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     anthropic_api_key: str = ""
 
-    # Origins allowed to call this API. Vite uses 5173 by default but steps to
-    # the next free port if something else already holds it, so the first few
-    # are listed. This is an explicit allowlist rather than "*" on purpose:
-    # a wildcard origin would let any site on the internet call this API from a
-    # visitor's browser.
-    cors_origins: list[str] = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174",
-        "http://localhost:5175",
-        "http://127.0.0.1:5175",
-    ]
+    # Origins allowed to call this API.
+    #
+    # Deliberately NOT "*": a wildcard would let any site on the internet call
+    # this API from a visitor's browser. Instead any port on loopback is
+    # allowed, because Vite picks 5173 but steps to the next free port when
+    # something else holds it - and hard-coding a short list meant the board
+    # failed with an opaque CORS error on a machine where those ports were busy.
+    #
+    # For a deployment, set CORS_ORIGINS in .env to the real site origin; when
+    # it is set, only those origins are allowed and the loopback rule is off.
+    cors_origins: list[str] = []
+
+    cors_localhost_regex: str = r"http://(localhost|127\.0\.0\.1)(:\d+)?"
 
     @property
     def ai_enabled(self) -> bool:

@@ -39,14 +39,27 @@ app = FastAPI(
 )
 
 # The React dev server runs on a different port, so the browser treats it as a
-# different origin. Only the origins listed in settings may call this API.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# different origin and requires an explicit allow.
+#
+# With CORS_ORIGINS set (a deployment), only those exact origins are accepted.
+# With it unset (local development), any loopback port is accepted - never "*",
+# which would expose this API to every site on the internet.
+if settings.cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=settings.cors_localhost_regex,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 app.include_router(tasks_routes.router)
 app.include_router(dependencies_routes.router)
