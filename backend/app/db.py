@@ -23,11 +23,20 @@ from app.config import settings
 # the process itself is ephemeral.
 _serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
 
+_serverless_options: dict = {
+    "poolclass": NullPool,
+    # PgBouncer in transaction mode cannot hold prepared statements between
+    # queries, so disable psycopg's automatic preparation. Harmless on a direct
+    # connection, and it avoids "prepared statement already exists" if the host
+    # only offers a pooled URL.
+    "connect_args": {"prepare_threshold": None},
+}
+
 engine = create_engine(
     settings.database_url,
     echo=False,
     pool_pre_ping=True,
-    **({"poolclass": NullPool} if _serverless else {}),
+    **(_serverless_options if _serverless else {}),
 )
 
 

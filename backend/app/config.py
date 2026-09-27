@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from pydantic import field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # backend/app/config.py -> backend/app -> backend -> repo root
@@ -24,9 +24,24 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # SQLAlchemy connection URL for the Postgres instance started by
-    # `docker compose up -d` at the repo root.
-    database_url: str = "postgresql+psycopg://taskflow:taskflow@localhost:5433/taskflow"
+    # SQLAlchemy connection URL.
+    #
+    # Locally this is the Postgres started by `docker compose up -d`. Hosted
+    # Postgres add-ons inject their own variable name instead of DATABASE_URL -
+    # Supabase provides POSTGRES_URL_NON_POOLING and POSTGRES_URL - so those are
+    # accepted as fallbacks and the deployment needs no manual wiring.
+    #
+    # The non-pooled URL is preferred: the pooled endpoint runs PgBouncer in
+    # transaction mode, which does not support the prepared statements psycopg
+    # uses by default.
+    database_url: str = Field(
+        default="postgresql+psycopg://taskflow:taskflow@localhost:5433/taskflow",
+        validation_alias=AliasChoices(
+            "DATABASE_URL",
+            "POSTGRES_URL_NON_POOLING",
+            "POSTGRES_URL",
+        ),
+    )
 
     # Optional model providers for the AI suggestion feature. When neither is
     # set, suggestions are disabled and the rest of the app runs normally, so
