@@ -57,18 +57,15 @@ def live_edges(node_ids: list[str] | set[str], edges: list[Edge]) -> list[Edge]:
 
 
 def build_forward_adjacency(node_ids: list[str], edges: list[Edge]) -> AdjacencyList:
-    """upstream id -> [downstream ids]  ("what waits on this task?")"""
+    """upstream id -> [downstream ids]  ("what waits on this task?")
+
+    Only the forward direction is built. `recompute` needs the reverse view
+    ("what does this task wait on?") but groups the edge objects themselves by
+    downstream id, because it needs each edge's lag - not just the upstream id.
+    """
     adjacency: AdjacencyList = {node_id: [] for node_id in node_ids}
     for edge in live_edges(adjacency.keys(), edges):
         adjacency[edge.upstream_id].append(edge.downstream_id)
-    return adjacency
-
-
-def build_reverse_adjacency(node_ids: list[str], edges: list[Edge]) -> AdjacencyList:
-    """downstream id -> [upstream ids]  ("what does this task wait on?")"""
-    adjacency: AdjacencyList = {node_id: [] for node_id in node_ids}
-    for edge in live_edges(adjacency.keys(), edges):
-        adjacency[edge.downstream_id].append(edge.upstream_id)
     return adjacency
 
 
